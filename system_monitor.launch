@@ -1,9 +1,11 @@
 <launch>
 
   <arg name="n_processes" default="8" />
-  
+  <arg name="n_cores" default="8" />
+
   <node name="system_monitor_node" pkg="system_monitor_ros" type="system_monitor_node" output="screen" >
     <param name="n_processes" value="$(arg n_processes)" />
+    <param name="n_cores" value="$(arg n_cores)" />
   </node>
 
 </launch>
