@@ -62,7 +62,7 @@ int main(int argc, char* argv[])
 
 	    //get cpu and memory usage
 	    std::string cpu_request_cmd = std::string(" top -bn 1 | awk '{print $9}' | tail -n +8 | awk '{s+=$1} END {print s/") + std::to_string(n_cores) + std::string("}'");
-            std::string cpu = exec(cpu_request_cmd.c_str());
+	    std::string cpu = exec(cpu_request_cmd.c_str());
 	    std::string mem = exec(" top -b -n1 | grep Mem | head -1 | awk '{print $4, $5, $6, $7, $8, $9, $10, $11}'");
 
 	    //Get n_processes most CPU-hungry processes
