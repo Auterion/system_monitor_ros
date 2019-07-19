@@ -39,9 +39,8 @@ int main(int argc, char* argv[])
 	ros::NodeHandle nh("~");
 
 	//get parameter
-	int n_processes, n_cores;
+  int n_processes;
 	nh.param<int>("n_processes", n_processes, 8);
-        nh.param<int>("n_cores", n_cores, 8);
 
 	//initialize publishers
 	ros::Publisher cpu_pub_;
@@ -61,9 +60,8 @@ int main(int argc, char* argv[])
 	    std_msgs::String proc_msg;
 
 	    //get cpu and memory usage
-	    std::string cpu_request_cmd = std::string(" top -bn 1 | awk '{print $9}' | tail -n +8 | awk '{s+=$1} END {print s/") + std::to_string(n_cores) + std::string("}'");
-	    std::string cpu = exec(cpu_request_cmd.c_str());
-	    std::string mem = exec(" top -b -n1 | grep Mem | head -1 | awk '{print $4, $5, $6, $7, $8, $9, $10, $11}'");
+	    std::string cpu = exec(" top -bn 1 | sed -n 3p");
+	    std::string mem = exec(" top -bn 1 | sed -n 4p");
 
 	    //Get n_processes most CPU-hungry processes
 	    std::string command = "ps -e -o pid,pcpu,pmem,args --sort=-pcpu |  head -n ";
@@ -86,4 +84,3 @@ int main(int argc, char* argv[])
 
     return 0;
 }
-
