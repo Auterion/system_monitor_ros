@@ -11,6 +11,7 @@ find_package(catkin REQUIRED COMPONENTS
   rospy
   dynamic_reconfigure
   rosbag
+  mavros_msgs
 )
 find_package(PCL 1.7 REQUIRED)
 find_package(OpenCV REQUIRED)
@@ -26,7 +27,7 @@ find_package(OpenCV REQUIRED)
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
   #INCLUDE_DIRS include
-  CATKIN_DEPENDS roscpp rospy std_msgs message_runtime rosbag
+  CATKIN_DEPENDS roscpp rospy std_msgs message_runtime rosbag mavros_msgs
 #  DEPENDS system_lib
 )
 
