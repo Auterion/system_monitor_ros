@@ -12,6 +12,7 @@
 #include <iostream>
 #include <fstream>
 #include <std_msgs/String.h>
+#include <mavros_msgs/StatusText.h>
 
 #include <cstdio>
 #include <memory>
@@ -32,6 +33,10 @@ std::string exec(const char* cmd) {
     return result;
 }
 
+void sendWarningCPU() {
+
+}
+
 
 int main(int argc, char* argv[])
 {
@@ -39,17 +44,20 @@ int main(int argc, char* argv[])
 	ros::NodeHandle nh("~");
 
 	//get parameter
-  int n_processes;
+	int n_processes;
 	nh.param<int>("n_processes", n_processes, 8);
 
 	//initialize publishers
 	ros::Publisher cpu_pub_;
 	ros::Publisher memory_pub_;
 	ros::Publisher processes_pub_;
+	ros::Publisher mavros_cpu_warning_pub_;
+	ros::Time t_cpu_sent = ros::Time::now();
 
 	cpu_pub_ = nh.advertise<std_msgs::String>("/cpu_usage", 1);
 	memory_pub_ = nh.advertise<std_msgs::String>("/memory_usage", 1);
 	processes_pub_ = nh.advertise<std_msgs::String>("/processes", 1);
+	mavros_cpu_warning_pub_ = nh.advertise<mavros_msgs::StatusText>("/mavros/statustext/send", 1);
 
 
 	while (ros::ok()) {
@@ -77,6 +85,31 @@ int main(int argc, char* argv[])
 	    cpu_pub_.publish(cpu_msg);
 	    memory_pub_.publish(mem_msg);
 	    processes_pub_.publish(proc_msg);
+
+	    //get idle CPU for evaluation
+	    std::stringstream ss(cpu);
+	    std::vector<std::string> cpu_data;
+
+	    while( ss.good() )
+	    {
+	        std::string substr;
+	        getline( ss, substr, ',' );
+	        cpu_data.push_back( substr );
+	    }
+
+	    std::string cpu_idle_part = cpu_data[3];
+	    std::string cpu_idle_string = cpu_idle_part.substr (0,cpu_idle_part.size()-2);
+
+	    //send warning if less than 20% CPU is idle
+	    if(std::stof(cpu_idle_string) < 20.0 && ros::Time::now() - t_cpu_sent > ros::Duration(5.0)){
+	    	mavros_msgs::StatusText msg;
+	        msg.header.stamp = ros::Time::now();
+	        msg.severity = 2; //CRITICAL
+	        msg.text = ("CPU warning, only " + cpu_idle_string + "% idle").c_str();
+	        mavros_cpu_warning_pub_.publish(msg);
+	        t_cpu_sent = ros::Time::now();
+	    }
+
 
 		ros::Duration(1).sleep();
 	}
