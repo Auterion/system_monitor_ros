@@ -68,7 +68,7 @@ int main(int argc, char* argv[])
 	    std_msgs::String proc_msg;
 
 	    //get cpu and memory usage
-	    std::string cpu = exec(" top -bn 1 | sed -n 3p");
+	    std::string cpu = exec(" top -b -n 2 | sed -n '/^%Cpu/p' | sed -n 2p");
 	    std::string mem = exec(" top -bn 1 | sed -n 4p");
 
 	    //Get n_processes most CPU-hungry processes
@@ -111,7 +111,7 @@ int main(int argc, char* argv[])
 	    }
 
 
-		ros::Duration(1).sleep();
+		ros::Duration(0.1).sleep();
 	}
 
 
