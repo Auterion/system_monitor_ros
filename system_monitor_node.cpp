@@ -101,7 +101,7 @@ int main(int argc, char* argv[])
 	    std::string cpu_idle_string = cpu_idle_part.substr (0,cpu_idle_part.size()-2);
 
 	    //send warning if less than 20% CPU is idle
-	    if(std::stof(cpu_idle_string) < 20.0 && ros::Time::now() - t_cpu_sent > ros::Duration(5.0)){
+	    if(std::stof(cpu_idle_string) < 100.0 && ros::Time::now() - t_cpu_sent > ros::Duration(0.2)){
 	    	mavros_msgs::StatusText msg;
 	        msg.header.stamp = ros::Time::now();
 	        msg.severity = 2; //CRITICAL
