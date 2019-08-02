@@ -6,4 +6,7 @@
     <param name="n_processes" value="$(arg n_processes)" />
   </node>
 
+  <!-- Monitor cpu temperature -->
+  <node name="libsensors_monitor" pkg="libsensors_monitor" type="libsensors_monitor"/>  
+
 </launch>
