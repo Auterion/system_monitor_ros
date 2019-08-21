@@ -19,6 +19,8 @@
 #include <string>
 #include <array>
 
+#include <mavros_msgs/OnboardComputerStatus.h>
+
 
 std::string exec(const char* cmd) {
     std::array<char, 128> buffer;
@@ -46,11 +48,12 @@ int main(int argc, char* argv[])
 	ros::Publisher cpu_pub_;
 	ros::Publisher memory_pub_;
 	ros::Publisher processes_pub_;
+	ros::Publisher onboardstatus_pub_;
 
 	cpu_pub_ = nh.advertise<std_msgs::String>("/cpu_usage", 1);
 	memory_pub_ = nh.advertise<std_msgs::String>("/memory_usage", 1);
 	processes_pub_ = nh.advertise<std_msgs::String>("/processes", 1);
-
+	onboardstatus_pub_ = nh.advertise<mavros_msgs::OnboardComputerStatus>("/mavros/onboard_computer/status", 1);
 
 	while (ros::ok()) {
 
