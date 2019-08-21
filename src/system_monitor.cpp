@@ -61,6 +61,7 @@ int main(int argc, char* argv[])
 	    std_msgs::String cpu_msg;
 	    std_msgs::String mem_msg;
 	    std_msgs::String proc_msg;
+		mavros_msgs::OnboardComputerStatus  status_msg;
 
 	    //get cpu and memory usage
 	    std::string cpu = exec(" top -bn 1 | sed -n 3p");
