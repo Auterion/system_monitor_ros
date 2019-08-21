@@ -39,8 +39,6 @@ catkin_package(
 # include_directories(include)
 include_directories(
   ${catkin_INCLUDE_DIRS}
-  ${PCL_INCLUDE_DIRS}
-  ${OpenCV_INCLUDE_DIRS}
 )
 
 ## Declare a C++ library
@@ -51,4 +49,4 @@ add_library(system_monitor_ros
 ## Declare a C++ executable
 add_executable(system_monitor_node system_monitor_node.cpp)
 
-target_link_libraries(system_monitor_node ${OpenCV_LIBS} ${PCL_LIBRARIES} ${catkin_LIBRARIES})
+target_link_libraries(system_monitor_node ${catkin_LIBRARIES})
