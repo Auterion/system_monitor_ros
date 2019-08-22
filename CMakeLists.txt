@@ -11,9 +11,9 @@ find_package(catkin REQUIRED COMPONENTS
   rospy
   dynamic_reconfigure
   rosbag
+  mavros
+  mavros_msgs
 )
-find_package(PCL 1.7 REQUIRED)
-find_package(OpenCV REQUIRED)
 
 ###################################
 ## catkin specific configuration ##
@@ -25,8 +25,8 @@ find_package(OpenCV REQUIRED)
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-  #INCLUDE_DIRS include
-  CATKIN_DEPENDS roscpp rospy std_msgs message_runtime rosbag
+  INCLUDE_DIRS include
+  CATKIN_DEPENDS roscpp rospy std_msgs message_runtime rosbag mavros_msgs
 #  DEPENDS system_lib
 )
 
@@ -38,15 +38,15 @@ catkin_package(
 ## Your package locations should be listed before other locations
 # include_directories(include)
 include_directories(
+  include
   ${catkin_INCLUDE_DIRS}
 )
 
 ## Declare a C++ library
-add_library(system_monitor_ros
-  system_monitor_node.cpp
+add_library(system_monitor
+  src/system_monitor.cpp
 )
 
 ## Declare a C++ executable
-add_executable(system_monitor_node system_monitor_node.cpp)
-
-target_link_libraries(system_monitor_node ${catkin_LIBRARIES})
+add_executable(system_monitor_node src/system_monitor_node.cpp)
+target_link_libraries(system_monitor_node system_monitor ${catkin_LIBRARIES})
