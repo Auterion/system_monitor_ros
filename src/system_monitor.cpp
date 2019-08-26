@@ -22,11 +22,11 @@ SystemMonitor::~SystemMonitor(){
 
 }
 
-std::vector<CPUData> SystemMonitor::GetCpuTimes() {
-    std::vector<CPUData> entries;
+std::vector<CpuData> SystemMonitor::GetCpuTimes() {
+    std::vector<CpuData> entries;
  	const std::string STR_CPU("cpu");
 	const std::size_t LEN_STR_CPU = STR_CPU.size();
-	const std::string STR_TOT("tot");
+	const std::string STR_TOT("total");
 
     std::string line;
 
@@ -37,8 +37,8 @@ std::vector<CPUData> SystemMonitor::GetCpuTimes() {
         	std::istringstream ss(line);
 
 			// store entry
-			entries.emplace_back(CPUData());
-			CPUData & entry = entries.back();
+			entries.emplace_back(CpuData());
+			CpuData & entry = entries.back();
 
 			// read cpu label
 			ss >> entry.cpu;
@@ -57,43 +57,37 @@ std::vector<CPUData> SystemMonitor::GetCpuTimes() {
 
 }
 
-size_t SystemMonitor::GetIdleTime(const CPUData & e) {
-    return  e.times[S_IDLE] +
-            e.times[S_IOWAIT];
+size_t SystemMonitor::GetIdleTime(const CpuData & e) {
+    return  e.times[CpuStates::IDLE] +
+            e.times[CpuStates::IOWAIT];
 }
 
-size_t SystemMonitor::GetActiveTime(const CPUData & e) {
-    return  e.times[S_USER] +
-            e.times[S_NICE] +
-            e.times[S_SYSTEM] +
-            e.times[S_IRQ] +
-            e.times[S_SOFTIRQ] +
-            e.times[S_STEAL] +
-            e.times[S_GUEST] +
-            e.times[S_GUEST_NICE];
+size_t SystemMonitor::GetActiveTime(const CpuData & e) {
+    return  e.times[CpuStates::USER] +
+            e.times[CpuStates::NICE] +
+            e.times[CpuStates::SYSTEM] +
+            e.times[CpuStates::IRQ] +
+            e.times[CpuStates::SOFTIRQ] +
+            e.times[CpuStates::STEAL] +
+            e.times[CpuStates::GUEST] +
+            e.times[CpuStates::GUEST_NICE];
 }
 
 void SystemMonitor::readCpuUsage(){
-    std::vector<CPUData> cpu_times = GetCpuTimes();
-	int NUM_ENTRIES = cpu_times.size();
+    std::vector<CpuData> cpu_times = GetCpuTimes();
 
-	if(prev_cpu_times_.size() == 0)	prev_cpu_times_ = cpu_times;
+	if(prev_cpu_times_.size() == 0)	prev_cpu_times_ = cpu_times; //Handle exception
 
-	for(size_t i = 0; i < NUM_ENTRIES; ++i)
-	{
-		const CPUData & e1 = prev_cpu_times_[i];
-		const CPUData & e2 = cpu_times[i];
+	for(size_t i = 0; i < cpu_times.size(); ++i)	{
+		const CpuData & e1 = prev_cpu_times_[i];
+		const CpuData & e2 = cpu_times[i];
 
-		const float ACTIVE_TIME	= static_cast<float>(GetActiveTime(e2) - GetActiveTime(e1));
-		const float IDLE_TIME	= static_cast<float>(GetIdleTime(e2) - GetIdleTime(e1));
-		const float TOTAL_TIME	= ACTIVE_TIME + IDLE_TIME;
+		const float active_time	= static_cast<float>(GetActiveTime(e2) - GetActiveTime(e1));
+		const float idle_time	= static_cast<float>(GetIdleTime(e2) - GetIdleTime(e1));
+		const float total_time	= active_time + idle_time;
 
-		if(i == 0 ){
-			//TODO: Shift cpu_combined message
-			cpu_combined_[0] = uint8_t(100.f * ACTIVE_TIME / TOTAL_TIME);
-		} else {
-			cpu_cores_[i-1] = uint8_t(100.f * ACTIVE_TIME / TOTAL_TIME);
-		}
+		if(i == 0 )	cpu_combined_[0] = uint8_t(100.f * active_time / total_time);
+		else	cpu_cores_[i-1] = uint8_t(100.f * active_time / total_time);
 	}
 	prev_cpu_times_ = cpu_times;
 }
