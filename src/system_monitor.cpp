@@ -91,6 +91,19 @@ void SystemMonitor::readCpuUsage(){
 	}
 	prev_cpu_times_ = cpu_times;
 }
+
+void SystemMonitor::readBoardTemperature(){
+	//Read first board temperature sensor that is visible as there is only one field for temperature
+	std::ifstream proc_stat("/sys/class/thermal/thermal_zone0/temp");
+	std::string line;
+	size_t board_temperature;
+
+	std::getline(proc_stat, line);
+	std::istringstream ss(line);
+	ss >> board_temperature;
+	board_temp_ = int8_t(board_temperature / 1000);
+}
+
 boost::array<uint8_t, 8> SystemMonitor::getCpuCores() {
 	readCpuUsage();
 	return cpu_cores_;
@@ -98,4 +111,9 @@ boost::array<uint8_t, 8> SystemMonitor::getCpuCores() {
 
 boost::array<uint8_t, 10> SystemMonitor::getCpuCombined(){
 	return cpu_combined_;
+}
+
+int8_t SystemMonitor::getBoardTemperature(){
+	readBoardTemperature();
+	return board_temp_;
 }
