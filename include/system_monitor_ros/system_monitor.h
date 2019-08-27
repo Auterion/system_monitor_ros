@@ -30,14 +30,17 @@ public:
 
     boost::array<uint8_t, 8> getCpuCores();
     boost::array<uint8_t, 10> getCpuCombined();
+    int8_t getBoardTemperature();
 
 
 private:
    	std::vector<CpuData> prev_cpu_times_;
     boost::array<uint8_t, 8> cpu_cores_;
     boost::array<uint8_t, 10> cpu_combined_;
+    int8_t board_temp_;
 
     void readCpuUsage();
+    void readBoardTemperature();
     std::vector<CpuData> GetCpuTimes();
     size_t GetIdleTime(const CpuData & e);
     size_t GetActiveTime(const CpuData & e);
