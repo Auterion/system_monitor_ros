@@ -21,11 +21,3 @@ install:
   - git clone --depth=1 https://github.com/ros-industrial/industrial_ci.git .industrial_ci
 script:
   - .industrial_ci/travis.sh
-
-notifications:
-  webhooks:
-    urls:
-      - https://webhooks.gitter.im/e/b856f174ff9736ad23ec
-    on_success: change
-    on_failure: always
-    on_start: false
