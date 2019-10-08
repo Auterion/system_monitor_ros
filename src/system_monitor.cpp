@@ -103,3 +103,20 @@ int8_t SystemMonitor::getBoardTemperature() {
   readBoardTemperature();
   return board_temp_;
 }
+
+int8_t SystemMonitor::getRamTotal() {
+    FILE *meminfo = fopen("/proc/meminfo", "r");
+    
+    char line[256];
+    int ram;
+    while(fgets(line, sizeof(line), meminfo))
+    {
+        if(sscanf(line, "MemTotal: %d kB", &ram) == 1)
+        {
+            fclose(meminfo);
+            return ram;
+        }
+    }
+    fclose(meminfo);
+    return 0;
+}
