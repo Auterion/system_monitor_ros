@@ -82,7 +82,8 @@ int main(int argc, char* argv[]) {
     status_msg.cpu_cores = system_monitor_.getCpuCores();
     status_msg.cpu_combined = system_monitor_.getCpuCombined();
     status_msg.temperature_board = system_monitor_.getBoardTemperature();
-    status_msg.ram_usage = system_monitor_.getRamTotal();
+    status_msg.ram_usage = system_monitor_.getRamUsage();
+    status_msg.ram_total = system_monitor_.getRamTotal();
 
     // publish system data
     onboardstatus_pub_.publish(status_msg);

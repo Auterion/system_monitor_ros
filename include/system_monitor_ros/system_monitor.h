@@ -31,7 +31,8 @@ public:
     boost::array<uint8_t, 8> getCpuCores();
     boost::array<uint8_t, 10> getCpuCombined();
     int8_t getBoardTemperature();
-    int8_t getRamTotal();
+    uint32_t getRamUsage();
+    uint32_t getRamTotal();
 
 private:
    	std::vector<CpuData> prev_cpu_times_;
