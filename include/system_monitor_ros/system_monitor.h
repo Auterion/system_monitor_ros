@@ -28,6 +28,7 @@ public:
     SystemMonitor();
     virtual ~SystemMonitor();
 
+    uint32_t getUpTime();
     boost::array<uint8_t, 8> getCpuCores();
     boost::array<uint8_t, 10> getCpuCombined();
     int8_t getBoardTemperature();
@@ -38,7 +39,9 @@ private:
     boost::array<uint8_t, 8> cpu_cores_;
     boost::array<uint8_t, 10> cpu_combined_;
     int8_t board_temp_;
+    uint32_t up_time_;
 
+    void readUpTime();
     void readCpuUsage();
     void readBoardTemperature();
     std::vector<CpuData> GetCpuTimes();
