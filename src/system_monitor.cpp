@@ -59,6 +59,18 @@ size_t SystemMonitor::GetActiveTime(const CpuData& e) {
          e.times[CpuStates::GUEST_NICE];
 }
 
+void SystemMonitor::readUpTime() {
+  FILE *uptimeinfo = fopen("/proc/uptime", "r");
+  char line[256];
+  float up_time, up_time2;
+
+  fgets(line, sizeof(line), uptimeinfo);
+  sscanf(line, "%f %f", &up_time, &up_time2);
+  fclose(uptimeinfo);
+
+  up_time_ = uint32_t(up_time * 1000.0);
+}
+
 void SystemMonitor::readCpuUsage() {
   std::vector<CpuData> cpu_times = GetCpuTimes();
 
@@ -90,6 +102,11 @@ void SystemMonitor::readBoardTemperature() {
   std::istringstream ss(line);
   ss >> board_temperature;
   board_temp_ = int8_t(board_temperature / 1000);
+}
+
+uint32_t SystemMonitor::getUpTime() {
+  readUpTime();
+  return up_time_;
 }
 
 boost::array<uint8_t, 8> SystemMonitor::getCpuCores() {
