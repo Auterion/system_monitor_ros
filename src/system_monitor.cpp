@@ -120,3 +120,41 @@ int8_t SystemMonitor::getBoardTemperature() {
   readBoardTemperature();
   return board_temp_;
 }
+
+uint32_t SystemMonitor::getRamUsage() {
+    FILE *meminfo = fopen("/proc/meminfo", "r");
+    
+    char line[256];
+    int ram;
+    while(fgets(line, sizeof(line), meminfo))
+    {
+        if(sscanf(line, "MemTotal: %d kB", &ram) == 1)
+        {
+            fclose(meminfo);
+            return uint32_t(ram / 1000);
+        }
+    }
+    fclose(meminfo);
+    return 0;
+}
+
+uint32_t SystemMonitor::getRamTotal() {
+    FILE *meminfo = fopen("/proc/meminfo", "r");
+    
+    char line[256];
+    int ram_total;
+    int ram_free;
+
+    while(fgets(line, sizeof(line), meminfo))
+    {
+        sscanf(line, "MemTotal: %d kB", &ram_total);
+
+        if(sscanf(line, "MemAvailable: %d kB", &ram_free) == 1)
+        {
+            fclose(meminfo);
+            return uint32_t((ram_total - ram_free) / 1000);
+        }
+    }
+    fclose(meminfo);
+    return 0;
+}
