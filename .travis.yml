@@ -1,23 +1,54 @@
-# Based on https://github.com/felixduvallet/ros-travis-integration
-#
-# vim:set ts=2 sw=2 et:
-
-language: generic
-services:
-  - docker
-
-cache:
-  directories:
-    - $HOME/.ccache
+sudo: required
 
 env:
   global:
-    - CCACHE_DIR=$HOME/.ccache
-    - DOCKER_RUN_OPTS="-e CI=true"
-  matrix:
-    - ROS_DISTRO="kinetic" UPSTREAM_WORKSPACE=file $ROSINSTALL_FILENAME='dependencies.rosinstall'
+    - CCACHE_DIR=${HOME}/.ccache
+    - PX4_FIRMWARE=https://github.com/PX4/Firmware.git
+    - PX4_MSGS=https://github.com/PX4/px4_msgs.git
+    - PX4_ROS_COM=https://github.com/PX4/px4_ros_com.git
+    - BUILD_PX4_FIRMWARE_RTPS="git clone ${PX4_FIRMWARE} ~/PX4/Firmware; cd ~/PX4/Firmware; DONT_RUN=1 make px4_sitl_rtps gazebo; cd $pwd;"
 
-install:
-  - git clone --depth=1 https://github.com/ros-industrial/industrial_ci.git .industrial_ci
+matrix:
+  include:
+    - name: Build and test in ROS2 Dashing
+      os: linux
+      language: cpp
+      services:
+        - docker
+      cache:
+      ccache: true
+      env:
+        - ROS2_DISTRO=dashing
+        - ROS2_ENV_PATH=/opt/ros/${ROS2_DISTRO}/setup.bash
+        - BUILD_ARGS="--no_ros1_bridge --ros_distro ${ROS2_DISTRO} --ros_path ${ROS2_ENV_PATH}"
+        - COLCON_BUILD="cd src/px4_ros_com/scripts && ./build_ros2_workspace.bash"
+        - DOCKER_CONTAINER=px4io/px4-dev-ros2-dashing:2020-01-15
+        # - TEST_SETUP="source ~/colcon_ws/install/setup.bash; cd ~/colcon_ws/src/system_monitor_ros/test; python3 pipeline_io_test.py -d ~/PX4/Firmware/ -t fcu_output;"
+        - WS_SETUP="unset ROS_DISTRO; mkdir -p ~/colcon_ws/src; cd ~/colcon_ws; ln -s ${TRAVIS_BUILD_DIR} src/system_monitor_ros; git clone ${PX4_MSGS} -b master src/px4_msgs; git clone ${PX4_ROS_COM} -b master src/px4_ros_com;"
+
+    - name: Build and test in ROS2 Eloquent
+      os: linux
+      language: cpp
+      services:
+        - docker
+      cache:
+      ccache: true
+      env:
+        - ROS2_DISTRO=eloquent
+        - ROS2_ENV_PATH=/opt/ros/${ROS2_DISTRO}/setup.bash
+        - BUILD_ARGS="--no_ros1_bridge --ros_distro ${ROS2_DISTRO} --ros_path ${ROS2_ENV_PATH}"
+        - COLCON_BUILD="cd src/px4_ros_com/scripts && ./build_ros2_workspace.bash"
+        - DOCKER_CONTAINER=px4io/px4-dev-ros2-eloquent:2020-01-15
+        # - TEST_SETUP="source ~/colcon_ws/install/setup.bash; cd ~/colcon_ws/src/system_monitor_ros/test; python3 pipeline_io_test.py -d ~/PX4/Firmware/ -t fcu_output;"
+        - WS_SETUP="unset ROS_DISTRO; mkdir -p ~/colcon_ws/src; cd ~/colcon_ws; ln -s ${TRAVIS_BUILD_DIR} src/system_monitor_ros; git clone ${PX4_MSGS} -b master src/px4_msgs; git clone ${PX4_ROS_COM} -b master src/px4_ros_com;"
+
 script:
-  - .industrial_ci/travis.sh
+  # CI runs over all branches containing 'ros2' on the name or that do not contain 'ros1' in the name
+  - if [[ $TRAVIS_BRANCH =~ "ros2" ]] || [[ ! "$TRAVIS_BRANCH" =~ "ros1" ]]; then
+        docker run -it --rm -w ${TRAVIS_BUILD_DIR}
+          --env=CCACHE_DIR="${CCACHE_DIR}"
+          --env=LOCAL_USER_ID="$(id -u)"
+          --volume=${CCACHE_DIR}:${CCACHE_DIR}:rw
+          --volume=${TRAVIS_BUILD_DIR}:${TRAVIS_BUILD_DIR}:rw
+          ${DOCKER_CONTAINER} /bin/bash -ce "${BUILD_PX4_FIRMWARE_RTPS} ${WS_SETUP} ${COLCON_BUILD} ${BUILD_ARGS}; ${TEST_SETUP}";
+    fi

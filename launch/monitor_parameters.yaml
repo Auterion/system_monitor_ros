@@ -1,0 +1,3 @@
+system_monitor_node:
+    ros__parameters:
+        n_processes: 8

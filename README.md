@@ -1,44 +1,38 @@
 # system_monitor_ros
-[![Build Status](https://travis-ci.com/Auterion/system_monitor_ros.svg?branch=master)](https://travis-ci.com/Auterion/system_monitor_ros)
+[![Build Status](https://travis-ci.com/Auterion/system_monitor_ros.svg?branch=ros2)](https://travis-ci.com/Auterion/system_monitor_ros)
 
-`system_monitor_ros` is a ros package to publish onboard companion status messages to the flight controller through [mavros](https://github.com/mavlink/mavros)
-This is a reference implementation of the mavlink message [ONBOARD_COMPUTER_STATUS](https://mavlink.io/en/messages/common.html#ONBOARD_COMPUTER_STATUS).
+`system_monitor_ros` is a ROS 2 package to publish onboard companion status messages to the flight controller through [*px4_ros_com*](https://https://github.com/PX4/px4_ros_com) micro-RTPS bridge.
+Similarly, this is a reference implementation of the Mavlink message [ONBOARD_COMPUTER_STATUS](https://mavlink.io/en/messages/common.html#ONBOARD_COMPUTER_STATUS), but following the message definition of the uORB message [`onboard_computer_status`](https://github.com/PX4/Firmware/blob/master/msg/onboard_computer_status.msg), which ROS counter-part is defined in [*px4_msgs*](https://github.com/PX4/px4_msgs/blob/master/msg/OnboardComputerStatus.msg). This same message is published by this node in the `/OnboardComputerStatus_PubSubTopic` topic.
 
-The node publishes the information on `/mavros/onboard_computer/status` topic which contains the following information.
+## Requirements
+  * ROS 2 Dashing or Eloquent - follow the [install guide](https://index.ros.org/doc/ros2/Installation/Dashing/Linux-Install-Debians/);
+  * Colcon build tool: `apt install python3-colcon-common-extensions`
+  * [*px4_ros_com*](https://https://github.com/PX4/px4_ros_com) built on the same workspace or on a different workspace that can be overlayed;
+  * [*px4_msgs*](https://https://github.com/PX4/px4_msgs) built on the same workspace or on a different workspace that can be overlayed;
+
+## Building
+If *px4_ros_com* and *px4_msgs* were not built on another workspace, they can be built together with this package using the [`build_ros2_workspace.bash`](https://github.com/PX4/px4_ros_com/blob/master/scripts/build_ros2_workspace.bash) script for that purpose:
 
 ```
-# Mavros message: ONBOARDCOMPUTERSTATUS
-
- std_msgs/Header header
-
- uint8 component               # See enum MAV_COMPONENT
-
- uint32 uptime               # [ms] Time since system boot
-uint8 type                  # Type of the onboard computer: 0: Mission computer primary, 1: Mission computer backup 1, 2: Mission computer backup 2, 3: Compute node, 4-5: Compute spares, 6-9: Payload computers.
-uint8[8] cpu_cores          # CPU usage on the component in percent (100 - idle). A value of UINT8_MAX implies the field is unused.
-uint8[10] cpu_combined      # Combined CPU usage as the last 10 slices of 100 MS (a histogram). This allows to identify spikes in load that max out the system, but only for a short amount of time. A value of UINT8_MAX implies the field is unused
-uint8[4] gpu_cores          # GPU usage on the component in percent (100 - idle). A value of UINT8_MAX implies the field is unused
-uint8[10] gpu_combined      # Combined GPU usage as the last 10 slices of 100 MS (a histogram). This allows to identify spikes in load that max out the system, but only for a short amount of time. A value of UINT8_MAX implies the field is unused.
-int8 temperature_board      # [degC] Temperature of the board. A value of INT8_MAX implies the field is unused.
-int8[8] temperature_core    # [degC] Temperature of the CPU core. A value of INT8_MAX implies the field is unused.
-int16[4] fan_speed          # [rpm] Fan speeds. A value of INT16_MAX implies the field is unused.
-uint32 ram_usage            # [MiB] Amount of used RAM on the component system. A value of UINT32_MAX implies the field is unused.
-uint32 ram_total            # [MiB] Total amount of RAM on the component system. A value of UINT32_MAX implies the field is unused.
-uint32[4] storage_type      # Storage type: 0: HDD, 1: SSD, 2: EMMC, 3: SD card (non-removable), 4: SD card (removable). A value of UINT32_MAX implies the field is unused.
-uint32[4] storage_usage     # [MiB] Amount of used storage space on the component system. A value of UINT32_MAX implies the field is unused.
-uint32[4] storage_total     # [MiB] Total amount of storage space on the component system. A value of UINT32_MAX implies the field is unused.
-uint32[6] link_type         # Link type: 0-9: UART, 10-19: Wired network, 20-29: Wifi, 30-39: Point-to-point proprietary, 40-49: Mesh proprietary.
-uint32[6] link_tx_rate      # [KiB/s] Network traffic from the component system. A value of UINT32_MAX implies the field is unused.
-uint32[6] link_rx_rate      # [KiB/s] Network traffic to the component system. A value of UINT32_MAX implies the field is unused.
-uint32[6] link_tx_max       # [KiB/s] Network capacity from the component system. A value of UINT32_MAX implies the field is unused.
-uint32[6] link_rx_max       # [KiB/s] Network capacity to the component system. A value of UINT32_MAX implies the field is unused.
+    $ mkdir -p colcon_ws/src
+    $ cd colcon_ws/src
+    $ git clone https://github.com/Auterion/system_monitor_ros.git -b ros2
+    $ git clone https://github.com/PX4/px4_ros_com.git
+    $ git clone https://github.com/PX4/px4_msgs.git
+    $ ./px4_ros_com/scripts/build_ros2_workspace.bash
 ```
 
-> This is still WIP and some of the information are not being published.
+## Setup the workspace
 
+```
+    $ source colcon_ws/install/setup.bash
+```
 
-## Running the package
-The package can be run by the following roslaunch command.
+## Running the monitor node
+The monitor can be run by the following `ros2 launch` command. The parameters can be edited in the `monitor_parameters.yaml` file.
+
 ```
-roslaunch system_monitor_ros system_monitor.launch
+    $ ros2 launch system_monitor_ros system_monitor.launch.py
 ```
+
+To communicate with the autopilot, make sure that the `micrortps_agent` of *px4_ros_com* and the `micrortps_client` on the autopilot are both running.
