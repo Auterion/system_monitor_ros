@@ -1,4 +1,4 @@
-#include <boost/array.hpp>
+#include <array>
 #include <vector>
 
 #define NUM_CPU_STATES 10
@@ -29,16 +29,16 @@ public:
     virtual ~SystemMonitor();
 
     uint32_t getUpTime();
-    boost::array<uint8_t, 8> getCpuCores();
-    boost::array<uint8_t, 10> getCpuCombined();
+    std::array<uint8_t, 8> getCpuCores();
+    std::array<uint8_t, 10> getCpuCombined();
     int8_t getBoardTemperature();
     uint32_t getRamUsage();
     uint32_t getRamTotal();
 
 private:
    	std::vector<CpuData> prev_cpu_times_;
-    boost::array<uint8_t, 8> cpu_cores_;
-    boost::array<uint8_t, 10> cpu_combined_;
+    std::array<uint8_t, 8> cpu_cores_;
+    std::array<uint8_t, 10> cpu_combined_;
     int8_t board_temp_;
     uint32_t up_time_;
 

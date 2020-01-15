@@ -60,7 +60,7 @@ size_t SystemMonitor::GetActiveTime(const CpuData& e) {
 }
 
 void SystemMonitor::readUpTime() {
-  FILE *uptimeinfo = fopen("/proc/uptime", "r");
+  FILE* uptimeinfo = fopen("/proc/uptime", "r");
   char line[256];
   float up_time, up_time2;
 
@@ -109,12 +109,12 @@ uint32_t SystemMonitor::getUpTime() {
   return up_time_;
 }
 
-boost::array<uint8_t, 8> SystemMonitor::getCpuCores() {
+std::array<uint8_t, 8> SystemMonitor::getCpuCores() {
   readCpuUsage();
   return cpu_cores_;
 }
 
-boost::array<uint8_t, 10> SystemMonitor::getCpuCombined() { return cpu_combined_; }
+std::array<uint8_t, 10> SystemMonitor::getCpuCombined() { return cpu_combined_; }
 
 int8_t SystemMonitor::getBoardTemperature() {
   readBoardTemperature();
@@ -122,39 +122,35 @@ int8_t SystemMonitor::getBoardTemperature() {
 }
 
 uint32_t SystemMonitor::getRamUsage() {
-    FILE *meminfo = fopen("/proc/meminfo", "r");
-    
-    char line[256];
-    int ram;
-    while(fgets(line, sizeof(line), meminfo))
-    {
-        if(sscanf(line, "MemTotal: %d kB", &ram) == 1)
-        {
-            fclose(meminfo);
-            return uint32_t(ram / 1000);
-        }
+  FILE* meminfo = fopen("/proc/meminfo", "r");
+
+  char line[256];
+  int ram;
+  while (fgets(line, sizeof(line), meminfo)) {
+    if (sscanf(line, "MemTotal: %d kB", &ram) == 1) {
+      fclose(meminfo);
+      return uint32_t(ram / 1000);
     }
-    fclose(meminfo);
-    return 0;
+  }
+  fclose(meminfo);
+  return 0;
 }
 
 uint32_t SystemMonitor::getRamTotal() {
-    FILE *meminfo = fopen("/proc/meminfo", "r");
-    
-    char line[256];
-    int ram_total;
-    int ram_free;
+  FILE* meminfo = fopen("/proc/meminfo", "r");
 
-    while(fgets(line, sizeof(line), meminfo))
-    {
-        sscanf(line, "MemTotal: %d kB", &ram_total);
+  char line[256];
+  int ram_total;
+  int ram_free;
 
-        if(sscanf(line, "MemAvailable: %d kB", &ram_free) == 1)
-        {
-            fclose(meminfo);
-            return uint32_t((ram_total - ram_free) / 1000);
-        }
+  while (fgets(line, sizeof(line), meminfo)) {
+    sscanf(line, "MemTotal: %d kB", &ram_total);
+
+    if (sscanf(line, "MemAvailable: %d kB", &ram_free) == 1) {
+      fclose(meminfo);
+      return uint32_t((ram_total - ram_free) / 1000);
     }
-    fclose(meminfo);
-    return 0;
+  }
+  fclose(meminfo);
+  return 0;
 }

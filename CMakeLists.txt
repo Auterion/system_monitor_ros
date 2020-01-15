@@ -1,52 +1,76 @@
-cmake_minimum_required(VERSION 2.8.3)
+cmake_minimum_required(VERSION 3.5)
+
 project(system_monitor_ros)
 
-add_definitions(-std=c++11)
+if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wpedantic")
+endif()
 
-## Find catkin macros and libraries
-## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
-## is used, also find other catkin packages
-find_package(catkin REQUIRED COMPONENTS
-  roscpp
-  rospy
-  dynamic_reconfigure
-  rosbag
-  mavros
-  mavros_msgs
-)
+find_package(ament_cmake REQUIRED)
+find_package(builtin_interfaces REQUIRED)
+find_package(rosbag2 REQUIRED)
+find_package(rclcpp REQUIRED)
 
-###################################
-## catkin specific configuration ##
-###################################
-## The catkin_package macro generates cmake config files for your package
-## Declare things to be passed to dependent projects
-## INCLUDE_DIRS: uncomment this if you package contains header files
-## LIBRARIES: libraries you create in this project that dependent projects also need
-## CATKIN_DEPENDS: catkin_packages dependent projects also need
-## DEPENDS: system dependencies of this project that dependent projects also need
-catkin_package(
-  INCLUDE_DIRS include
-  CATKIN_DEPENDS roscpp rospy std_msgs message_runtime rosbag mavros_msgs
-#  DEPENDS system_lib
-)
+get_default_rmw_implementation(rmw_implementation)
+find_package("${rmw_implementation}" REQUIRED)
 
-###########
-## Build ##
-###########
+find_package(px4_msgs REQUIRED)
+find_package(std_msgs REQUIRED)
 
-## Specify additional locations of header files
-## Your package locations should be listed before other locations
-# include_directories(include)
-include_directories(
-  include
-  ${catkin_INCLUDE_DIRS}
-)
+find_package(PythonInterp REQUIRED)
 
-## Declare a C++ library
+#################
+# Setup targets #
+#################
+
+include_directories(include ${rclcpp_INCLUDE_DIRS})
+
+# Declare system_monitor library
 add_library(system_monitor
   src/system_monitor.cpp
 )
 
-## Declare a C++ executable
-add_executable(system_monitor_node src/system_monitor_node.cpp)
-target_link_libraries(system_monitor_node system_monitor ${catkin_LIBRARIES})
+# Add node executable
+add_executable(system_monitor_node
+  src/system_monitor_node.cpp
+)
+target_link_libraries(system_monitor_node system_monitor)
+
+#################################
+# ament specific configuration ##
+#################################
+
+# Add node dependencies
+ament_target_dependencies(system_monitor_node px4_msgs rclcpp std_msgs system_monitor)
+
+# Export information to downstream packages
+ament_export_dependencies(rclcpp rosidl_default_runtime system_monitor)
+ament_export_include_directories(include ${px4_msgs_INCLUDE_DIRS})
+ament_export_libraries()
+
+############
+# Install ##
+############
+
+# Install artifacts
+install(DIRECTORY include DESTINATION include)
+install(TARGETS system_monitor_node
+  DESTINATION lib/${PROJECT_NAME}
+)
+install(TARGETS system_monitor
+  DESTINATION lib/${PROJECT_NAME}
+)
+
+# Install launch files
+install(DIRECTORY
+  launch
+  DESTINATION share/${PROJECT_NAME}
+)
+
+############
+# Testing ##
+############
+
+# TODO
+
+ament_package()
