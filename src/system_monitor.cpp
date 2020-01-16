@@ -64,8 +64,10 @@ void SystemMonitor::readUpTime() {
   char line[256];
   float up_time, up_time2;
 
-  fgets(line, sizeof(line), uptimeinfo);
-  sscanf(line, "%f %f", &up_time, &up_time2);
+  if (fgets(line, sizeof(line), uptimeinfo) != NULL) {
+    sscanf(line, "%f %f", &up_time, &up_time2);
+  }
+
   fclose(uptimeinfo);
 
   up_time_ = uint32_t(up_time * 1000.0);
