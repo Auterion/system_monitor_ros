@@ -41,7 +41,7 @@ target_link_libraries(system_monitor_node system_monitor)
 #################################
 
 # Add node dependencies
-ament_target_dependencies(system_monitor_node px4_msgs rclcpp std_msgs system_monitor)
+ament_target_dependencies(system_monitor_node px4_msgs rclcpp std_msgs)
 
 # Export information to downstream packages
 ament_export_dependencies(rclcpp rosidl_default_runtime system_monitor)
