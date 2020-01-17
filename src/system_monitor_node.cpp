@@ -40,8 +40,10 @@ class OnboardComputerStatusPublisher : public rclcpp::Node {
     memory_pub_ = this->create_publisher<std_msgs::msg::String>("/memory_usage", 1);
     processes_pub_ = this->create_publisher<std_msgs::msg::String>("/processes", 1);
 
+    // Get the parameters
     int n_processes = this->declare_parameter("n_processes", 8);
-    RCLCPP_DEBUG(this->get_logger(), "n_processes: %d", n_processes);
+    auto rate = std::chrono::duration<double>(1 / this->declare_parameter("rate", 2.0));
+    RCLCPP_DEBUG(this->get_logger(), "n_processes: %d; rate: %f", n_processes, rate);
 
     auto timer_callback = [this, n_processes]() -> void {
       // Get CPU and Memory usage
@@ -81,7 +83,7 @@ class OnboardComputerStatusPublisher : public rclcpp::Node {
       this->processes_pub_->publish(proc_msg);
     };
     system_monitor_ = std::make_shared<SystemMonitor>();
-    timer_ = this->create_wall_timer(500ms, timer_callback);
+    timer_ = this->create_wall_timer(rate, timer_callback);
   }
 
  private:
