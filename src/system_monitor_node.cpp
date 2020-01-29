@@ -33,26 +33,31 @@ class OnboardComputerStatusPublisher : public rclcpp::Node {
     return result;
   }
 
-  OnboardComputerStatusPublisher() : Node("system_monitor_node") {
+  OnboardComputerStatusPublisher()
+      : Node("system_monitor_node"),
+        n_processes_(this->declare_parameter("n_processes", 8)),
+        rate_(std::chrono::duration<double>(1 / this->declare_parameter("rate", 2.0)))
+
+  {
     ocs_publisher_ =
         this->create_publisher<px4_msgs::msg::OnboardComputerStatus>("OnboardComputerStatus_PubSubTopic", 1);
     cpu_publisher_ = this->create_publisher<std_msgs::msg::String>("/cpu_usage", 1);
     memory_pub_ = this->create_publisher<std_msgs::msg::String>("/memory_usage", 1);
     processes_pub_ = this->create_publisher<std_msgs::msg::String>("/processes", 1);
 
-    // Get the parameters
-    int n_processes = this->declare_parameter("n_processes", 8);
-    auto rate = std::chrono::duration<double>(1 / this->declare_parameter("rate", 2.0));
-    RCLCPP_DEBUG(this->get_logger(), "n_processes: %d; rate: %f", n_processes, rate);
-
-    auto timer_callback = [this, n_processes]() -> void {
+    auto timer_callback = [this]() -> void {
       // Get CPU and Memory usage
       std::string cpu = exec(" top -bn 1 | sed -n 3p");
       std::string mem = exec(" top -bn 1 | sed -n 4p");
 
+      // Check if the number of processes parameter was updated
+      this->get_parameter("n_processes", this->n_processes_);
+
+      RCLCPP_DEBUG(this->get_logger(), "n_processes: %d; rate: %f", this->n_processes_, this->rate_);
+
       // Get n_processes most CPU-hungry processes
       std::string command = "ps -e -o pid,pcpu,pmem,args --sort=-pcpu |  head -n ";
-      command.append(std::to_string(n_processes + 1));
+      command.append(std::to_string(this->n_processes_ + 1));
       command.append(" | cut -d' ' -f1-8");
       std::string processes = exec(command.c_str());
 
@@ -83,12 +88,18 @@ class OnboardComputerStatusPublisher : public rclcpp::Node {
       this->processes_pub_->publish(proc_msg);
     };
     system_monitor_ = std::make_shared<SystemMonitor>();
-    timer_ = this->create_wall_timer(rate, timer_callback);
+    timer_ = this->create_wall_timer(this->rate_, timer_callback);
   }
 
  private:
+  // SystemMonitor object ptr
   std::shared_ptr<SystemMonitor> system_monitor_;
 
+  // Parameters
+  int n_processes_;
+  std::chrono::duration<double> rate_;
+
+  // ROS timer and publishers
   rclcpp::TimerBase::SharedPtr timer_;
   rclcpp::Publisher<px4_msgs::msg::OnboardComputerStatus>::SharedPtr ocs_publisher_;
   rclcpp::Publisher<std_msgs::msg::String>::SharedPtr cpu_publisher_;
