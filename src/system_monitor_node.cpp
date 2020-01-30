@@ -51,13 +51,13 @@ class OnboardComputerStatusPublisher : public rclcpp::Node {
       std::string mem = exec(" top -bn 1 | sed -n 4p");
 
       // Check if the number of processes parameter was updated
-      this->get_parameter("n_processes", this->n_processes_);
+      this->get_parameter("n_processes", n_processes_);
 
-      RCLCPP_DEBUG(this->get_logger(), "n_processes: %d; rate: %f", this->n_processes_, this->rate_);
+      RCLCPP_DEBUG(this->get_logger(), "n_processes: %d; rate: %f", n_processes_, rate_);
 
       // Get n_processes most CPU-hungry processes
       std::string command = "ps -e -o pid,pcpu,pmem,args --sort=-pcpu |  head -n ";
-      command.append(std::to_string(this->n_processes_ + 1));
+      command.append(std::to_string(n_processes_ + 1));
       command.append(" | cut -d' ' -f1-8");
       std::string processes = exec(command.c_str());
 
@@ -82,13 +82,13 @@ class OnboardComputerStatusPublisher : public rclcpp::Node {
       proc_msg.data = processes;
 
       // Publish messages
-      this->ocs_publisher_->publish(status_msg);
-      this->cpu_publisher_->publish(cpu_msg);
-      this->memory_pub_->publish(mem_msg);
-      this->processes_pub_->publish(proc_msg);
+      ocs_publisher_->publish(status_msg);
+      cpu_publisher_->publish(cpu_msg);
+      memory_pub_->publish(mem_msg);
+      processes_pub_->publish(proc_msg);
     };
     system_monitor_ = std::make_shared<SystemMonitor>();
-    timer_ = this->create_wall_timer(this->rate_, timer_callback);
+    timer_ = this->create_wall_timer(rate_, timer_callback);
   }
 
  private:
