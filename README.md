@@ -1,14 +1,14 @@
 # system_monitor_ros
 [![Build and Test package](https://github.com/Auterion/system_monitor_ros/workflows/Build%20and%20Test%20package/badge.svg?branch=master)](https://github.com/Auterion/system_monitor_ros/actions)
 
-`system_monitor_ros` is a ROS 2 package to publish onboard companion status messages to the flight controller through [*px4_ros_com*](https://https://github.com/PX4/px4_ros_com) micro-RTPS bridge.
+`system_monitor_ros` is a ROS 2 package to publish onboard companion status messages to the flight controller through [*px4_ros_com*](https://github.com/PX4/px4_ros_com) micro-RTPS bridge.
 Similarly, this is a reference implementation of the Mavlink message [ONBOARD_COMPUTER_STATUS](https://mavlink.io/en/messages/common.html#ONBOARD_COMPUTER_STATUS), but following the message definition of the uORB message [`onboard_computer_status`](https://github.com/PX4/Firmware/blob/master/msg/onboard_computer_status.msg), which ROS counter-part is defined in [*px4_msgs*](https://github.com/PX4/px4_msgs/blob/master/msg/OnboardComputerStatus.msg). This same message is published by this node in the `/OnboardComputerStatus_PubSubTopic` topic.
 
 ## Requirements
   * ROS 2 Dashing or Eloquent - follow the [install guide](https://index.ros.org/doc/ros2/Installation/Dashing/Linux-Install-Debians/);
   * Colcon build tool: `apt install python3-colcon-common-extensions`
-  * [*px4_ros_com*](https://https://github.com/PX4/px4_ros_com) built on the same workspace or on a different workspace that can be overlayed;
-  * [*px4_msgs*](https://https://github.com/PX4/px4_msgs) built on the same workspace or on a different workspace that can be overlayed;
+  * [*px4_ros_com*](https://github.com/PX4/px4_ros_com) built on the same workspace or on a different workspace that can be overlayed;
+  * [*px4_msgs*](https://github.com/PX4/px4_msgs) built on the same workspace or on a different workspace that can be overlayed;
 
 ## Building
 If *px4_ros_com* and *px4_msgs* were not built on another workspace, they can be built together with this package using the [`build_ros2_workspace.bash`](https://github.com/PX4/px4_ros_com/blob/master/scripts/build_ros2_workspace.bash) script for that purpose:
