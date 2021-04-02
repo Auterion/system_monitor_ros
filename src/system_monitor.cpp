@@ -123,7 +123,7 @@ int8_t SystemMonitor::getBoardTemperature() {
   return board_temp_;
 }
 
-uint32_t SystemMonitor::getRamUsage() {
+uint32_t SystemMonitor::getRamTotal() {
   FILE* meminfo = fopen("/proc/meminfo", "r");
 
   char line[256];
@@ -138,7 +138,7 @@ uint32_t SystemMonitor::getRamUsage() {
   return 0;
 }
 
-uint32_t SystemMonitor::getRamTotal() {
+uint32_t SystemMonitor::getRamUsage() {
   FILE* meminfo = fopen("/proc/meminfo", "r");
 
   char line[256];
