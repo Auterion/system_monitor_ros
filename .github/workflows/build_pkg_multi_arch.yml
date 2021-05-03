@@ -1,0 +1,81 @@
+name: Build/deb packaging for ROS2 Foxy in multi-arch
+
+on:
+  push:
+    branches:
+      - 'main'
+      - 'release/*'
+    tags:
+      - '*'
+  pull_request:
+    branches:
+      - '*'
+
+jobs:
+  packaging:
+    name: "${{ matrix.arch }}"
+    runs-on: ubuntu-20.04
+    strategy:
+      matrix:
+        ros2_distro: [foxy]
+        arch: [x86_64, aarch64]
+    steps:
+      - uses: actions/checkout@v2
+      - name: Process Github references
+        id: refs
+        run: |
+          git fetch --all --tags
+          TAG_VERSION=$(bash -c " \\
+            if [ \"$(git show-ref --tags)\" ]; then \\
+              tag=$(git describe --always --tags $(git rev-list --tags --max-count=1) | sed -n 's/v\([0-9]*\.[0-9]*\.[0-9]*\).*$/\1/p'); \\
+              if [[ -z \$(echo $tag | xargs) ]]; then \\
+                echo 0.1.0; \\
+              else \\
+                echo $tag; \\
+              fi; \\
+            else \\
+              echo 0.1.0; \\
+            fi"
+          )
+          ARCH=$(bash -c "if [ \"${{ matrix.arch }}\" = \"x86_64\" ]; then echo amd64; elif [ \"${{ matrix.arch }}\" = \"aarch64\" ]; then echo arm64; fi")
+          echo "::set-output name=tag_version::${TAG_VERSION}"
+          echo "::set-output name=package_arch::${ARCH}"
+          echo "::set-output name=sha_short::$(git rev-parse --short HEAD)"
+          echo "::set-output name=branch::$(echo ${GITHUB_REF#refs/heads/})"
+          echo "::set-output name=date::$(date +'%Y-%m-%d')"
+      - name: Install dependencies
+        run: |
+          sudo apt update && sudo apt install -y --no-install-recommends \
+            git \
+            python3-pip \
+            qemu-user-static
+          sudo pip3 install ros_cross_compile
+      - name: Configure workspace
+        run: |
+          unset ROS_DISTRO
+          mkdir -p /tmp/colcon_ws/src
+          cp -ar ${GITHUB_WORKSPACE} /tmp/colcon_ws/src/system_monitor_ros/
+      - name: Build & Packaging
+        run: |
+          # Clone px4_msgs to be built from source
+          git clone https://github.com/PX4/px4_msgs.git /tmp/colcon_ws/src/px4_msgs
+          # Run cross-compilation
+          ros_cross_compile /tmp/colcon_ws \
+            --arch ${{ matrix.arch }} \
+            --os ubuntu \
+            --rosdistro ${{ matrix.ros2_distro }}
+      - name: Create zip
+        run: |
+          cd /tmp/colcon_ws/install_${{ matrix.arch }}
+          rm -rf px4_msgs # we don't need the px4_msgs packaged here
+          zip -r system-monitor-ros_${{ matrix.ros2_distro }}_v${{ steps.refs.outputs.tag_version }}_${{ steps.refs.outputs.package_arch }}.zip .
+      - name: Publish artefacts
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: svenstaro/upload-release-action@2.2.1
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: /tmp/colcon_ws/install_${{ matrix.arch }}/system-monitor-ros_${{ matrix.ros2_distro }}_v${{ steps.refs.outputs.tag_version }}_${{ steps.refs.outputs.package_arch }}.zip
+          release_name: v${{ steps.refs.outputs.tag_version }}
+          asset_name: system-monitor-ros_${{ matrix.ros2_distro }}_v${{ steps.refs.outputs.tag_version }}_${{ steps.refs.outputs.package_arch }}.zip
+          tag: v${{ steps.refs.outputs.tag_version }}
+          overwrite: true
