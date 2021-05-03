@@ -8,7 +8,6 @@ endif()
 
 find_package(ament_cmake REQUIRED)
 find_package(builtin_interfaces REQUIRED)
-find_package(rosbag2 REQUIRED)
 find_package(rclcpp REQUIRED)
 
 get_default_rmw_implementation(rmw_implementation)
