@@ -1,4 +1,4 @@
-name: Build/deb packaging for ROS2 Foxy in multi-arch
+name: Build/deb packaging for ROS2 in multi-arch
 
 on:
   push:
@@ -13,11 +13,11 @@ on:
 
 jobs:
   packaging:
-    name: "${{ matrix.arch }}"
+    name: ROS2 ${{ matrix.ros2_distro }} - ${{ matrix.arch }}
     runs-on: ubuntu-20.04
     strategy:
       matrix:
-        ros2_distro: [foxy]
+        ros2_distro: [foxy, galactic]
         arch: [x86_64, aarch64]
     steps:
       - uses: actions/checkout@v2
