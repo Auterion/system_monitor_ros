@@ -41,9 +41,9 @@ class OnboardComputerStatusPublisher : public rclcpp::Node {
   {
     ocs_publisher_ =
         this->create_publisher<px4_msgs::msg::OnboardComputerStatus>("fmu/onboard_computer_status/in", 1);
-    cpu_publisher_ = this->create_publisher<std_msgs::msg::String>("/cpu_usage", 1);
-    memory_pub_ = this->create_publisher<std_msgs::msg::String>("/memory_usage", 1);
-    processes_pub_ = this->create_publisher<std_msgs::msg::String>("/processes", 1);
+    cpu_publisher_ = this->create_publisher<std_msgs::msg::String>("system_monitor/cpu_usage", 1);
+    memory_pub_ = this->create_publisher<std_msgs::msg::String>("system_monitor/memory_usage", 1);
+    processes_pub_ = this->create_publisher<std_msgs::msg::String>("system_monitor/processes", 1);
 
     auto timer_callback = [this]() -> void {
       // Get CPU and Memory usage
