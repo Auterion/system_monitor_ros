@@ -1,5 +1,5 @@
-#include <atomic>
 #include <array>
+#include <atomic>
 #include <mutex>
 #include <queue>
 #include <thread>
