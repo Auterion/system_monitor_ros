@@ -1,7 +1,12 @@
+#include <atomic>
 #include <array>
+#include <mutex>
+#include <queue>
+#include <thread>
 #include <vector>
 
 #define NUM_CPU_STATES 10
+#define HISTOGRAM_ARRAY_SIZE 10
 
 enum CpuStates { USER, NICE, SYSTEM, IDLE, IOWAIT, IRQ, SOFTIRQ, STEAL, GUEST, GUEST_NICE };
 
@@ -25,9 +30,13 @@ class SystemMonitor {
  private:
   std::vector<CpuData> prev_cpu_times_;
   std::array<uint8_t, 8> cpu_cores_;
-  std::array<uint8_t, 10> cpu_combined_;
+  std::deque<uint8_t> cpu_combined_;
   int8_t board_temp_;
   uint32_t up_time_;
+
+  std::atomic_bool hist_stop_{false};
+  std::thread cpu_combined_hist_th_;
+  std::mutex hist_mtx_;
 
   void readUpTime();
   void readCpuUsage();
@@ -35,4 +44,13 @@ class SystemMonitor {
   std::vector<CpuData> GetCpuTimes();
   size_t GetIdleTime(const CpuData& e);
   size_t GetActiveTime(const CpuData& e);
+
+  /**
+   * @brief Following the spec in
+   * https://mavlink.io/en/messages/common.html#ONBOARD_COMPUTER_STATUS
+   * i.e, builds an histogram of combined CPU usage of the last 10 slices of 100ms.
+   * This allows that, even if the status is published at rates lower than 10hz,
+   * one can still analyse the previous ten CPU usage values in the last second
+   */
+  void SetCPUCombinedHist();
 };

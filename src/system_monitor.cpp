@@ -14,9 +14,45 @@
 
 #include <system_monitor_ros/system_monitor.h>
 
-SystemMonitor::SystemMonitor() {}
+using namespace std::chrono_literals;
 
-SystemMonitor::~SystemMonitor() {}
+SystemMonitor::SystemMonitor() {
+  // Defaulting to 255, so unused CPU cores can be ignored in logs
+  cpu_cores_.fill(UINT8_MAX);
+
+  // Start the combined CPU usage histogram
+  cpu_combined_hist_th_ = std::thread(&SystemMonitor::SetCPUCombinedHist, this);
+}
+
+SystemMonitor::~SystemMonitor() {
+  hist_stop_.store(true);
+  cpu_combined_hist_th_.join();
+}
+
+void SystemMonitor::SetCPUCombinedHist() {
+  while(!hist_stop_.load()) {
+    std::vector<CpuData> cpu_times = GetCpuTimes();
+
+    std::unique_lock<std::mutex> lock(hist_mtx_);
+    // Update process times
+    if (prev_cpu_times_.size() == 0) prev_cpu_times_ = cpu_times;  // Handle exception
+
+    const CpuData& e1 = prev_cpu_times_[0];
+    const CpuData& e2 = cpu_times[0];
+
+    const float active_time = static_cast<float>(GetActiveTime(e2) - GetActiveTime(e1));
+    const float idle_time = static_cast<float>(GetIdleTime(e2) - GetIdleTime(e1));
+    const float total_time = active_time + idle_time;
+
+    // Update the histogram
+    if (cpu_combined_.size() == HISTOGRAM_ARRAY_SIZE) {
+      cpu_combined_.pop_front();
+    }
+    cpu_combined_.push_back(uint8_t(100.f * active_time / total_time));
+    lock.unlock();
+    std::this_thread::sleep_for(100ms);
+  }
+}
 
 std::vector<CpuData> SystemMonitor::GetCpuTimes() {
   std::vector<CpuData> entries;
@@ -79,17 +115,19 @@ void SystemMonitor::readCpuUsage() {
   if (prev_cpu_times_.size() == 0) prev_cpu_times_ = cpu_times;  // Handle exception
 
   for (size_t i = 0; i < cpu_times.size(); ++i) {
+    std::unique_lock<std::mutex> lock(hist_mtx_);
     const CpuData& e1 = prev_cpu_times_[i];
+    lock.unlock();
+
     const CpuData& e2 = cpu_times[i];
 
     const float active_time = static_cast<float>(GetActiveTime(e2) - GetActiveTime(e1));
     const float idle_time = static_cast<float>(GetIdleTime(e2) - GetIdleTime(e1));
     const float total_time = active_time + idle_time;
 
-    if (i == 0)
-      cpu_combined_[0] = uint8_t(100.f * active_time / total_time);
-    else
+    if (i > 0) {
       cpu_cores_[i - 1] = uint8_t(100.f * active_time / total_time);
+    }
   }
   prev_cpu_times_ = cpu_times;
 }
@@ -116,7 +154,18 @@ std::array<uint8_t, 8> SystemMonitor::getCpuCores() {
   return cpu_cores_;
 }
 
-std::array<uint8_t, 10> SystemMonitor::getCpuCombined() { return cpu_combined_; }
+std::array<uint8_t, 10> SystemMonitor::getCpuCombined() {
+  std::array<uint8_t, 10> cpu_combined;
+  cpu_combined.fill(UINT8_MAX);
+  for (size_t i = 0; i < cpu_combined.size(); i++) {
+    if (cpu_combined_.size() >= i) {
+      std::unique_lock<std::mutex> lock(hist_mtx_);
+      cpu_combined[i] = cpu_combined_[i];
+      lock.unlock();
+    }
+  }
+  return cpu_combined;
+}
 
 int8_t SystemMonitor::getBoardTemperature() {
   readBoardTemperature();
