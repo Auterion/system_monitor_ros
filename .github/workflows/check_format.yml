@@ -1,0 +1,20 @@
+name: Check format
+
+on:
+  push:
+    branches:
+      - 'master'
+      - 'ros2'
+  pull_request:
+    branches:
+      - '*'
+
+jobs:
+  check_format:
+    runs-on: ubuntu-20.04
+    steps:
+    - uses: actions/checkout@v2
+    - name: Install clang-format-12
+      run: sudo apt update && sudo apt install -y clang-format-12
+    - name: check_format
+      run: ./tools/check_code_format.sh
