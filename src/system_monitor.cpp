@@ -6,13 +6,13 @@
  *
  */
 
+#include <system_monitor_ros/system_monitor.h>
 #include <unistd.h>
+
 #include <fstream>
 #include <iostream>
 #include <numeric>
 #include <sstream>
-
-#include <system_monitor_ros/system_monitor.h>
 
 using namespace std::chrono_literals;
 
@@ -30,7 +30,7 @@ SystemMonitor::~SystemMonitor() {
 }
 
 void SystemMonitor::SetCPUCombinedHist() {
-  while(!hist_stop_.load()) {
+  while (!hist_stop_.load()) {
     std::vector<CpuData> cpu_times = GetCpuTimes();
 
     std::unique_lock<std::mutex> lock(hist_mtx_);

@@ -10,13 +10,12 @@
  *      ros2 launch system_monitor_ros system_monitor.launch.py
  */
 
-#include <chrono>
-#include <rclcpp/rclcpp.hpp>
-
-#include <px4_msgs/msg/onboard_computer_status.hpp>
-#include <std_msgs/msg/string.hpp>
-
 #include <system_monitor_ros/system_monitor.h>
+
+#include <chrono>
+#include <px4_msgs/msg/onboard_computer_status.hpp>
+#include <rclcpp/rclcpp.hpp>
+#include <std_msgs/msg/string.hpp>
 
 using namespace std::chrono_literals;
 
@@ -36,32 +35,19 @@ class OnboardComputerStatusPublisher : public rclcpp::Node {
   OnboardComputerStatusPublisher()
       : Node("system_monitor_node"),
         n_processes_(this->declare_parameter("n_processes", 8)),
-        rate_(std::chrono::duration<double>(1 / this->declare_parameter("rate", 2.0)))
+        rate_(std::chrono::duration<double>(1 / this->declare_parameter("rate", 2.0))),
+        enable_internal_pubs_(this->declare_parameter("enable_internal_pubs", false))
 
   {
-    ocs_publisher_ =
-        this->create_publisher<px4_msgs::msg::OnboardComputerStatus>("fmu/onboard_computer_status/in", 1);
-    cpu_publisher_ = this->create_publisher<std_msgs::msg::String>("system_monitor/cpu_usage", 1);
-    memory_pub_ = this->create_publisher<std_msgs::msg::String>("system_monitor/memory_usage", 1);
-    processes_pub_ = this->create_publisher<std_msgs::msg::String>("system_monitor/processes", 1);
+    ocs_publisher_ = this->create_publisher<px4_msgs::msg::OnboardComputerStatus>("fmu/onboard_computer_status/in", 1);
+    if (enable_internal_pubs_) {
+      cpu_publisher_ = this->create_publisher<std_msgs::msg::String>("system_monitor/cpu_usage", 1);
+      memory_pub_ = this->create_publisher<std_msgs::msg::String>("system_monitor/memory_usage", 1);
+      processes_pub_ = this->create_publisher<std_msgs::msg::String>("system_monitor/processes", 1);
+    }
 
     auto timer_callback = [this]() -> void {
-      // Get CPU and Memory usage
-      std::string cpu = exec(" top -bn 1 | sed -n 3p");
-      std::string mem = exec(" top -bn 1 | sed -n 4p");
-
-      // Check if the number of processes parameter was updated
-      this->get_parameter("n_processes", n_processes_);
-
-      RCLCPP_DEBUG(this->get_logger(), "n_processes: %d; rate: %f", n_processes_, rate_);
-
-      // Get n_processes most CPU-hungry processes
-      std::string command = "ps -e -o pid,pcpu,pmem,args --sort=-pcpu |  head -n ";
-      command.append(std::to_string(n_processes_ + 1));
-      command.append(" | cut -d' ' -f1-8");
-      std::string processes = exec(command.c_str());
-
-      // Create messages
+      // Create OBC status message
       auto status_msg = px4_msgs::msg::OnboardComputerStatus();
 
       status_msg.timestamp = this->now().nanoseconds() * 1E-3;
@@ -72,20 +58,40 @@ class OnboardComputerStatusPublisher : public rclcpp::Node {
       status_msg.ram_total = system_monitor_->getRamTotal();
       status_msg.uptime = system_monitor_->getUpTime();
 
-      auto cpu_msg = std_msgs::msg::String();
-      cpu_msg.data = cpu;
-
-      auto mem_msg = std_msgs::msg::String();
-      mem_msg.data = mem;
-
-      auto proc_msg = std_msgs::msg::String();
-      proc_msg.data = processes;
-
-      // Publish messages
+      // Publish OBC status
       ocs_publisher_->publish(status_msg);
-      cpu_publisher_->publish(cpu_msg);
-      memory_pub_->publish(mem_msg);
-      processes_pub_->publish(proc_msg);
+
+      // Warning: these calls limit the rate of OnboardComputerStatus publisher
+      if (enable_internal_pubs_) {
+        // Get CPU and Memory usage
+        std::string cpu = exec(" top -bn 1 | sed -n 3p");
+        std::string mem = exec(" top -bn 1 | sed -n 4p");
+
+        // Check if the number of processes parameter was updated
+        this->get_parameter("n_processes", n_processes_);
+
+        RCLCPP_DEBUG(this->get_logger(), "n_processes: %d; rate: %f", n_processes_, rate_);
+
+        // Get n_processes most CPU-hungry processes
+        std::string command = "ps -e -o pid,pcpu,pmem,args --sort=-pcpu |  head -n ";
+        command.append(std::to_string(n_processes_ + 1));
+        command.append(" | cut -d' ' -f1-8");
+        std::string processes = exec(command.c_str());
+
+        auto cpu_msg = std_msgs::msg::String();
+        cpu_msg.data = cpu;
+
+        auto mem_msg = std_msgs::msg::String();
+        mem_msg.data = mem;
+
+        auto proc_msg = std_msgs::msg::String();
+        proc_msg.data = processes;
+
+        // Publish internal status data
+        cpu_publisher_->publish(cpu_msg);
+        memory_pub_->publish(mem_msg);
+        processes_pub_->publish(proc_msg);
+      }
     };
     system_monitor_ = std::make_shared<SystemMonitor>();
     timer_ = this->create_wall_timer(rate_, timer_callback);
@@ -98,6 +104,7 @@ class OnboardComputerStatusPublisher : public rclcpp::Node {
   // Parameters
   int n_processes_;
   std::chrono::duration<double> rate_;
+  bool enable_internal_pubs_;
 
   // ROS timer and publishers
   rclcpp::TimerBase::SharedPtr timer_;

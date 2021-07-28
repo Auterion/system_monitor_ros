@@ -1,4 +1,5 @@
 system_monitor_node:
     ros__parameters:
+        enable_internal_pubs: false
         n_processes: 8
         rate: 2.0 # Hz
